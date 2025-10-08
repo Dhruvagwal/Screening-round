@@ -1,10 +1,18 @@
+import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { WelcomeSectionProps } from "../types";
 import { Button } from "@/components/ui/button";
 import ZenMod from "./ZenMod";
+import LogoutModal from "./LogoutModal";
 
 export function WelcomeSection({ greeting, subtitle }: WelcomeSectionProps) {
   const { user } = useAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const handleTuneOutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
+
   return (
     <div className="mb-4 flex justify-between items-start">
       <div className="flex mb-2 gap-4"> 
@@ -17,10 +25,19 @@ export function WelcomeSection({ greeting, subtitle }: WelcomeSectionProps) {
         <ZenMod />
       </div>
       <div>
-        <Button variant="link" className="underline">
+        <Button 
+          variant="link" 
+          className="underline"
+          onClick={handleTuneOutClick}
+        >
           Tune out
         </Button>
       </div>
+      
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </div>
   );
 }

@@ -3,13 +3,11 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import React, { useEffect } from "react";
 import { useComposio } from "../hooks/useCalenderAuth";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useUserToken } from "@/lib/supabase/useUserToken";
 import {
   Calendar,
   CheckCircle2,
@@ -22,10 +20,21 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { addUserToken } from "@/lib/supabase/tokens";
 
 function ConnectWithCalender() {
-  const { user } = useAuth();
+  const { user, refreshConnectedAccount } = useAuth();
   const [url, setUrl] = React.useState("");
+  
+  // User token management
+  const {
+    saveToken,
+    deleteToken,
+    isLoading: isTokenLoading,
+    error: tokenError,
+    hasToken,
+    connectedAccountId,
+  } = useUserToken();
 
   useEffect(() => {
     setUrl(window.location.origin);
@@ -48,7 +57,18 @@ function ConnectWithCalender() {
 
   const handleConnect = async () => {
     if (isConnected) {
+      // Disconnect and remove token
       await disconnectAccount();
+      if (hasToken) {
+        const tokenDeleted = await deleteToken();
+        if (tokenDeleted) {
+          console.log("Token removed from database");
+          // Refresh the auth context to update connectedAccountId
+          await refreshConnectedAccount();
+        } else {
+          console.error("Failed to remove token:", tokenError);
+        }
+      }
     } else {
       const connectionRequest = await connectAccount();
       if (connectionRequest) {
@@ -57,7 +77,19 @@ function ConnectWithCalender() {
           const connectedAccount = await waitForConnection(
             connectionRequest.id
           );
-          console.log("Connected account:", connectedAccount);
+          
+          // Save the connected account ID to Supabase
+          if (connectedAccount?.id) {
+            const tokenSaved = await saveToken(connectedAccount.id);
+            if (tokenSaved) {
+              console.log("Connected account ID saved to database");
+              // Refresh the auth context to update connectedAccountId
+              await refreshConnectedAccount();
+            } else {
+              console.error("Failed to save token:", tokenError);
+              // Still continue with the connection even if token save fails
+            }
+          }
         } catch (err) {
           console.error("Failed to establish connection:", err);
         }
@@ -73,12 +105,18 @@ function ConnectWithCalender() {
   }, [error]);
 
   const getConnectionStatus = () => {
-    if (isConnecting) {
+    if (isConnecting || isTokenLoading) {
+      const loadingText = isTokenLoading 
+        ? "Saving connection details..." 
+        : "Establishing connection...";
+      const loadingDesc = isTokenLoading
+        ? "Securely storing your connection information"
+        : "Please wait while we securely connect to your Google Calendar";
+        
       return {
         icon: <Loader2 className="h-8 w-8 animate-spin" />,
-        text: "Establishing connection...",
-        description:
-          "Please wait while we securely connect to your Google Calendar",
+        text: loadingText,
+        description: loadingDesc,
         variant: "default" as const,
         disabled: true,
       };
@@ -109,29 +147,6 @@ function ConnectWithCalender() {
 
   const status = getConnectionStatus();
 
-  const features = [
-    {
-      icon: <Calendar className="h-6 w-6" />,
-      title: "Event Management",
-      description: "Create, edit, and manage calendar events seamlessly",
-    },
-    {
-      icon: <Clock className="h-6 w-6" />,
-      title: "Smart Scheduling",
-      description: "Intelligent scheduling with conflict detection",
-    },
-    {
-      icon: <Users className="h-6 w-6" />,
-      title: "Collaboration",
-      description: "Share calendars and collaborate with team members",
-    },
-    {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Real-time Sync",
-      description: "Instant synchronization across all your devices",
-    },
-  ];
-
   return (
     <div className="h-screen py-24 max-w-7xl mx-auto items-center lg:grid-cols-2 grid bg-background">
       {/* Header Section */}
@@ -160,7 +175,10 @@ function ConnectWithCalender() {
                     Google Calendar Connected
                   </p>
                   <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                    Syncing events and schedules in real-time
+                    {hasToken 
+                      ? `Syncing events and schedules in real-time • Account ID: ${connectedAccountId?.slice(0, 8)}...`
+                      : "Syncing events and schedules in real-time"
+                    }
                   </p>
                 </div>
               </div>
@@ -185,15 +203,22 @@ function ConnectWithCalender() {
             </Button>
 
             {/* Error State */}
-            {error && (
+            {(error || tokenError) && (
               <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-xl space-y-4">
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-base font-medium text-destructive">
-                      Connection Failed
+                      {tokenError ? "Token Save Failed" : "Connection Failed"}
                     </p>
-                    <p className="text-sm text-destructive/80 mt-2">{error}</p>
+                    <p className="text-sm text-destructive/80 mt-2">
+                      {tokenError || error}
+                    </p>
+                    {tokenError && (
+                      <p className="text-xs text-destructive/70 mt-1">
+                        Your calendar connection may work, but preferences won't be saved.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <Button

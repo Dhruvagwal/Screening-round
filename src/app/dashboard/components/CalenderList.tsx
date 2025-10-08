@@ -14,7 +14,7 @@ import {
 import { Calendar as CalendarType } from "../types";
 
 function CalenderList() {
-  const { calendars, isLoadingCalendars, error, fetchCalendars, clearError } =
+  const { calendars, isLoadingCalendars, error, fetchCalendars } =
     useCalenderLists();
 
   // Fetch calendars on component mount

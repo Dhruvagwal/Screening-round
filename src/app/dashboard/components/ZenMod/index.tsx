@@ -9,10 +9,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useGetCalendarContext } from "../../hooks/useCalendarContext";
 
 function index() {
+  const { getChat } = useGetCalendarContext();
   const handleClick = () => {
-    
+    getChat();
   };
   return (
     <Dialog>

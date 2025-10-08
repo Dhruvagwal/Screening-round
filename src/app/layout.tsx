@@ -29,13 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <ScrollArea className="h-screen w-screen">
-        <body
-          className={`${inter.variable} ${lora.variable} font-sans antialiased`}
-        >
-          <AuthProvider>{children}</AuthProvider>
-        </body>
-      </ScrollArea>
+      <body
+        className={`${inter.variable} ${lora.variable} font-sans antialiased`}
+      >
+        <AuthProvider>
+          <ScrollArea className="h-screen w-screen">{children}</ScrollArea>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

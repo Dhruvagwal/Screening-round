@@ -6,14 +6,15 @@ import { useState } from "react";
 import ConnectWithCalender from "./ConnectWithCalender";
 import CalenderList from "./CalenderList";
 import CalenderMeetings from "./CalenderMeetings";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function DashboardLayout() {
-  const [isConnecting, setIsConnecting] = useState(false); // Placeholder to avoid lint error for now
+  const { connectedAccountId } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       {/* <ConnectWithCalender/> */}
       <main className="">
-        {!isConnecting ? (
+        {connectedAccountId ? (
           <div className="container mx-auto p-16">
             {/* Welcome Section */}
             <WelcomeSection

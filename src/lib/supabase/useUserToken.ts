@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useState, useCallback, useEffect } from "react";
+import { useAuth } from "@/lib/auth/AuthContext";
 import {
   addUserToken,
   getUserToken,
   removeUserToken,
   checkConnectedAccountExists,
   UserToken,
-} from '@/lib/supabase/addToken';
+} from "@/lib/supabase/tokens";
 
 export interface UseUserTokenReturn {
   // State
@@ -51,10 +51,10 @@ export function useUserToken(): UseUserTokenReturn {
       if (result.success) {
         setUserToken(result.data || null);
       } else {
-        setError(result.error || 'Failed to load token');
+        setError(result.error || "Failed to load token");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -65,14 +65,14 @@ export function useUserToken(): UseUserTokenReturn {
   const saveToken = useCallback(
     async (connectedAccountId: string): Promise<boolean> => {
       if (!user?.id) {
-        setError('User not authenticated');
+        setError("User not authenticated");
         return false;
       }
 
+      console.log("trigger");
       try {
         setIsLoading(true);
         setError(null);
-
         // Check if account ID already exists for another user
         const existsResult = await checkConnectedAccountExists(
           connectedAccountId,
@@ -80,14 +80,17 @@ export function useUserToken(): UseUserTokenReturn {
         );
 
         if (!existsResult.success) {
-          setError(existsResult.error || 'Failed to validate account ID');
+          setError(existsResult.error || "Failed to validate account ID");
           return false;
         }
 
         if (existsResult.exists) {
-          setError('This connected account ID is already in use by another user');
+          setError(
+            "This connected account ID is already in use by another user"
+          );
           return false;
         }
+        console.log("Saving token", connectedAccountId);
 
         const result = await addUserToken(user.id, connectedAccountId);
 
@@ -95,11 +98,12 @@ export function useUserToken(): UseUserTokenReturn {
           setUserToken(result.data);
           return true;
         } else {
-          setError(result.error || 'Failed to save token');
+          setError(result.error || "Failed to save token");
           return false;
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
         setError(errorMessage);
         return false;
       } finally {
@@ -112,7 +116,7 @@ export function useUserToken(): UseUserTokenReturn {
   // Delete user token
   const deleteToken = useCallback(async (): Promise<boolean> => {
     if (!user?.id) {
-      setError('User not authenticated');
+      setError("User not authenticated");
       return false;
     }
 
@@ -126,11 +130,11 @@ export function useUserToken(): UseUserTokenReturn {
         setUserToken(null);
         return true;
       } else {
-        setError(result.error || 'Failed to delete token');
+        setError(result.error || "Failed to delete token");
         return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
       return false;
     } finally {
@@ -150,11 +154,12 @@ export function useUserToken(): UseUserTokenReturn {
         if (result.success) {
           return result.exists || false;
         } else {
-          setError(result.error || 'Failed to check account existence');
+          setError(result.error || "Failed to check account existence");
           return false;
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
         setError(errorMessage);
         return false;
       }

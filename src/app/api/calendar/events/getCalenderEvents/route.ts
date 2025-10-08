@@ -5,9 +5,7 @@ import { AzureOpenAI } from "openai";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const connectedAccountId = searchParams.get("connectedAccountId") || "xxx";
     const userId = searchParams.get("userId") || "xxx";
-    const calendarId = searchParams.get("calendarId") || "primary";
     const timeMin = searchParams.get("timeMin");
     const timeMax = searchParams.get("timeMax");
 
@@ -25,16 +23,15 @@ export async function GET(request: NextRequest) {
     const prompt = `
       You are an assistant that helps users manage and summarize their Google Calendar events.
       Your task is to filter all the events and only list meetings and appointments that the user is involved in.
-      do not include any other events like holiday or birthday only meetings and appointment.
-     ${calendarId !== "primary" ? ` (${calendarId})` : ""}${
-      timeMin || timeMax
-        ? ` between ${timeMin || "now"} and ${timeMax || "end of time"}`
-        : ""
-    }.`;
+      do not include any other events like holiday or birthday only meetings and appointment. ${
+        timeMin || timeMax
+          ? ` between ${timeMin || "now"} and ${timeMax || "end of time"}`
+          : ""
+      }.`;
 
     // Using chat.completions.create instead of responses.create
     const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "system", content: prompt }],
       tools: tool,
       model: "gpt-4o", // Make sure this matches your Azure deployment name
     });
@@ -42,12 +39,11 @@ export async function GET(request: NextRequest) {
     // Execute any tool calls requested by the AI
     const result = await composio.provider.handleToolCalls(userId, completion);
     const parsedResult = JSON.parse(result?.[0]?.content.toString());
+    console.log(parsedResult);
     return NextResponse.json({
       success: true,
       data: parsedResult,
       userId,
-      connectedAccountId,
-      calendarId,
     });
   } catch (error) {
     console.error(

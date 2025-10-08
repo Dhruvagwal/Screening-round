@@ -1,72 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import { composio, provider } from "@/lib/composio/composio";
+import { composio } from "@/lib/composio/composio";
 import { AzureOpenAI } from "openai";
+const prompt = `
+You are an assistant that helps users manage and summarize their Google Calendar events.
+Your task is to help the user by fetching and summarizing events from their specified Google Calendar.
+and increase his productivity.`;
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const connectedAccountId = searchParams.get("connectedAccountId") || "xxx";
     const userId = searchParams.get("userId") || "xxx";
-    const calendarId = searchParams.get("calendarId") || "primary";
-    const timeMin = searchParams.get("timeMin");
-    const timeMax = searchParams.get("timeMax");
+    const propmt = searchParams.get("propmt") || "xxx";
 
-    const tool = await composio.tools.get(userId, {
+    const tools = await composio.tools.get(userId, {
       toolkits: ["GOOGLECALENDAR"],
     });
 
-    if (!tool || tool.length === 0) {
-      return NextResponse.json(
-        { error: "No Google Calendar tools found for this user" },
-        { status: 400 }
-      );
-    }
-
-    const prompt = `
-      You are an assistant that helps users manage and summarize their Google Calendar events.
-      Your task is to filter all the events and only list meetings and appointments that the user is involved in.
-      do not include any other events like holiday or birthday only meetings and appointment.
-     ${calendarId !== "primary" ? ` (${calendarId})` : ""}${
-      timeMin || timeMax
-        ? ` between ${timeMin || "now"} and ${timeMax || "end of time"}`
-        : ""
-    }.`;
-
-    // Using chat.completions.create instead of responses.create
     const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      tools: tool,
-      model: "gpt-4o", // Make sure this matches your Azure deployment name
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+        {
+          role: "user",
+          content: propmt,
+        },
+      ],
+      tools: tools,
+      model: "gpt-4o",
+      tool_choice: "auto", // Explicitly tell the model it can use tools
     });
 
-    // Execute any tool calls requested by the AI
-    const result = await composio.provider.handleToolCalls(userId, completion);
-    const parsedResult = JSON.parse(result?.[0]?.content.toString());
+    const responseMessage = completion.choices[0].message;
+    // If there are tool calls, handle them
+    if (responseMessage.tool_calls) {
+      // Handle the tool calls and get calendar data
+      const toolResults = await composio.provider.handleToolCalls(
+        userId,
+        completion
+      );
+
+      // Make another completion to summarize the calendar data
+      const summaryCompletion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "Summarize these calendar events in a friendly way:",
+          },
+          {
+            role: "user",
+            content: JSON.stringify(toolResults),
+          },
+        ],
+        model: "gpt-4o",
+      });
+      return NextResponse.json({
+        success: true,
+        data: summaryCompletion.choices[0].message.content,
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      data: parsedResult,
-      userId,
-      connectedAccountId,
-      calendarId,
+      data: responseMessage.content,
     });
   } catch (error) {
-    console.error(
-      "Error fetching or summarizing Google Calendar events:",
-      error
-    );
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        {
-          error: "Internal Server Error",
-          message: error.message,
-          details:
-            process.env.NODE_ENV === "development" ? error.stack : undefined,
-        },
-        { status: 500 }
-      );
-    }
-
+    console.error("Error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },
       { status: 500 }

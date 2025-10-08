@@ -43,15 +43,7 @@ export interface UseCalendarDetailsReturn {
     failed: number;
   } | null;
 
-  // Methods
-  fetchCalendarDetails: (
-    calendarIds: string[],
-    connectedAccountId?: string
-  ) => Promise<void>;
-  fetchAllEvents: (
-    calendars: Calendar[],
-    connectedAccountId?: string
-  ) => Promise<void>;
+  fetchAllEvents: () => Promise<void>;
   clearError: () => void;
   clearEventsError: () => void;
   clearData: () => void;
@@ -62,6 +54,8 @@ export interface UseCalendarDetailsReturn {
  */
 export const useCalendarDetails = (): UseCalendarDetailsReturn => {
   const { user } = useAuth();
+  if (!user) return {} as UseCalendarDetailsReturn;
+
   const [calendarDetails, setCalendarDetails] = useState<CalendarDetails[]>([]);
   const [failedCalendars, setFailedCalendars] = useState<
     Array<{
@@ -115,177 +109,74 @@ export const useCalendarDetails = (): UseCalendarDetailsReturn => {
     .slice(-5)
     .reverse();
 
-  const fetchCalendarDetails = useCallback(
-    async (calendarIds: string[], connectedAccountId: string = "xxx") => {
-      if (!user?.id) {
-        setError("User not authenticated");
-        return;
+  const fetchAllEvents = useCallback(async () => {
+    try {
+      setIsLoadingEvents(true);
+      setEventsError(null);
+
+      // Get current time for filtering
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthFromNow = new Date(
+        now.getTime() + 30 * 24 * 60 * 60 * 1000
+      );
+
+      const params = new URLSearchParams({
+        userId: user?.id ?? "",
+        timeMin: oneWeekAgo.toISOString(),
+        timeMax: oneMonthFromNow.toISOString(),
+      });
+
+      const response = await fetch(
+        `/api/calendar/events/getCalenderEvents?${params}`
+      );
+
+      const parsedResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(parsedResponse.error || `Failed to fetch events`);
       }
 
-      if (!calendarIds || calendarIds.length === 0) {
-        setError("No calendar IDs provided");
-        return;
+      var data: Event[] = [];
+      if (parsedResponse.success && parsedResponse.data.data.items) {
+        data = parsedResponse.data.data.items.map((event: Event) => ({
+          ...event,
+        }));
       }
 
-      try {
-        setIsLoading(true);
-        setError(null);
+      // Process and sort events
+      const processedEvents = data
+        .filter(
+          (event) => event.start && (event.start.dateTime || event.start.date)
+        )
+        .map((event): Meeting => {
+          const startTime = new Date(event.start.dateTime || event.start.date!);
+          const isUpcoming = startTime > now;
 
-        console.log("Fetching calendar details for IDs:", calendarIds);
-
-        const response = await fetch("/api/calendar/details", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            calendarIds,
-            connectedAccountId,
-          }),
+          return {
+            ...event,
+            isUpcoming,
+            timeUntil: isUpcoming ? getTimeUntil(startTime) : undefined,
+            timeSince: !isUpcoming ? getTimeSince(startTime) : undefined,
+          };
+        })
+        .sort((a, b) => {
+          const aTime = new Date(a.start.dateTime || a.start.date!);
+          const bTime = new Date(b.start.dateTime || b.start.date!);
+          return aTime.getTime() - bTime.getTime();
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: CalendarDetailsApiResponse = await response.json();
-
-        if (data.success && data.data) {
-          setCalendarDetails(data.data.successful);
-          setFailedCalendars(data.data.failed);
-          setSummary(data.data.summary);
-
-          console.log("Calendar details fetched:", {
-            successful: data.data.successful.length,
-            failed: data.data.failed.length,
-            total: data.data.summary.total,
-          });
-
-          // Log any failures for debugging
-          if (data.data.failed.length > 0) {
-            console.warn("Some calendars failed to load:", data.data.failed);
-          }
-        } else {
-          throw new Error(
-            data.error || data.message || "Failed to fetch calendar details"
-          );
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        setError(errorMessage);
-        console.error("Error fetching calendar details:", err);
-
-        // Reset data on error
-        setCalendarDetails([]);
-        setFailedCalendars([]);
-        setSummary(null);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [user?.id]
-  );
-
-  const fetchAllEvents = useCallback(
-    async (
-      calendars: Calendar[],
-      connectedAccountId: string = "ca_Dxacybf7GPCn"
-    ) => {
-      if (!user?.id || calendars.length === 0) return;
-
-      try {
-        setIsLoadingEvents(true);
-        setEventsError(null);
-
-        // Get current time for filtering
-        const now = new Date();
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const oneMonthFromNow = new Date(
-          now.getTime() + 30 * 24 * 60 * 60 * 1000
-        );
-
-        console.log("Fetching events from", calendars.length, "calendars");
-
-        // Fetch events from all calendars
-        const eventPromises = calendars.map(async (calendar) => {
-          try {
-            const params = new URLSearchParams({
-              connectedAccountId: connectedAccountId,
-              userId: user.id,
-              calendarId: calendar.id,
-              timeMin: oneWeekAgo.toISOString(),
-              timeMax: oneMonthFromNow.toISOString(),
-              maxResults: "20",
-            });
-
-            const response = await fetch(
-              `/api/calendar/events/getCalenderEvents?${params}`
-            );
-
-            if (!response.ok) {
-              throw new Error(`Failed to fetch events for ${calendar.summary}`);
-            }
-
-            const data = await response.json();
-            if (data.success && data.data.data && data.data.data.items) {
-              return data.data.data.items.map((event: Event) => ({
-                ...event,
-                calendarName: calendar.summary,
-                calendarColor: calendar.backgroundColor || "#1967d2",
-              }));
-            }
-
-            return [];
-          } catch (err) {
-            console.error(
-              `Error fetching events for calendar ${calendar.summary}:`,
-              err
-            );
-            return [];
-          }
-        });
-
-        const allEventArrays = await Promise.all(eventPromises);
-        const allEvents = allEventArrays.flat();
-
-        // Process and sort events
-        const processedEvents = allEvents
-          .filter(
-            (event) => event.start && (event.start.dateTime || event.start.date)
-          )
-          .map((event): Meeting => {
-            const startTime = new Date(
-              event.start.dateTime || event.start.date!
-            );
-            const isUpcoming = startTime > now;
-
-            return {
-              ...event,
-              isUpcoming,
-              timeUntil: isUpcoming ? getTimeUntil(startTime) : undefined,
-              timeSince: !isUpcoming ? getTimeSince(startTime) : undefined,
-            };
-          })
-          .sort((a, b) => {
-            const aTime = new Date(a.start.dateTime || a.start.date!);
-            const bTime = new Date(b.start.dateTime || b.start.date!);
-            return aTime.getTime() - bTime.getTime();
-          });
-
-        setMeetings(processedEvents);
-        console.log("Fetched and processed", processedEvents.length, "events");
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch events";
-        setEventsError(errorMessage);
-        console.error("Error fetching events:", err);
-      } finally {
-        setIsLoadingEvents(false);
-      }
-    },
-    [user?.id, getTimeUntil, getTimeSince]
-  );
+      setMeetings(processedEvents);
+      console.log("Fetched and processed", processedEvents.length, "events");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch events";
+      setEventsError(errorMessage);
+      console.error("Error fetching events:", err);
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  }, [user?.id, getTimeUntil, getTimeSince]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -324,7 +215,6 @@ export const useCalendarDetails = (): UseCalendarDetailsReturn => {
     summary,
 
     // Methods
-    fetchCalendarDetails,
     fetchAllEvents,
     clearError,
     clearEventsError,

@@ -18,10 +18,9 @@ export const useCalenderLists = () => {
       try {
         setIsLoadingCalendars(true);
         setError(null);
-
         // Build query parameters
         const params = new URLSearchParams({
-          connectedAccountId,
+          connectedAccountId: connectedAccountId || "",
           userId: user.id,
         });
 

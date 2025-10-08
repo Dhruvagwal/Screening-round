@@ -31,7 +31,7 @@ function CalenderMeetings() {
   // Refresh events handler
   const handleRefreshEvents = () => {
     if (calendars.length > 0) {
-      fetchAllEvents(calendars, connectedAccountId || 'ca_Dxacybf7GPCn');
+      fetchAllEvents();
     }
   };
 
