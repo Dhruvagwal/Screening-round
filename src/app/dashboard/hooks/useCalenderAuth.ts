@@ -23,7 +23,6 @@ export const useComposio = (config: ComposioConfig) => {
     error: null,
     redirectUrl: null,
   });
-
   // Initiate connection
   const connectAccount = useCallback(async () => {
     if (!composio || !authConfigId || !config.userId) {
@@ -47,7 +46,7 @@ export const useComposio = (config: ComposioConfig) => {
         config.userId,
         authConfigId,
         {
-          callbackUrl: process.env.NEXT_PUBLIC_COMPOSIO_API_KEY,
+          callbackUrl: process.env.NEXT_PUBLIC_COMPOSIO_CALLBACK_URL,
         }
       );
       setState((prev) => ({

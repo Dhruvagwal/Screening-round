@@ -140,11 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log("Signing out user");
     try {
-      await AuthService.signOut();
+      console.log("Signing out user");
       setUser(null);
       setConnectedAccountId(null);
+      await AuthService.signOut();
     } catch (error) {
       throw error;
     }
