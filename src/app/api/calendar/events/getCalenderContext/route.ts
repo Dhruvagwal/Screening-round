@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
     });
 
     const responseMessage = initialCompletion.choices[0].message;
-
     //  Step 3: If the model called any tools, execute them through Composio
     if (responseMessage.tool_calls) {
       const toolResults = await composio.provider.handleToolCalls(
@@ -68,6 +67,7 @@ export async function GET(request: NextRequest) {
         initialCompletion
       );
 
+     
       //  Step 4: Summarize fetched calendar data
       const summaryCompletion = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        summary: summaryCompletion.choices[0].message.content,
+        data: summaryCompletion.choices[0].message.content,
         rawEvents: toolResults,
       });
     }
