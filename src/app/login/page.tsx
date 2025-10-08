@@ -5,6 +5,7 @@ import { LoginHeader, LoginForm } from "./components";
 import Image from "next/image";
 
 export default function LoginPage() {
+  console.log("LoginPage rendered");
   return (
     <div className="w-screen h-screen flex items-center justify-center ">
       <div className="max-w-5xl h-[70vh] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">

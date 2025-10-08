@@ -1,7 +1,7 @@
 export const dashboardData = {
   welcome: {
-    greeting: "Welcome back, Builder",
-    subtitle: "Your calendar intelligence dashboard"
+    greeting: "Welcome back",
+    subtitle: "Let's make today productive!",
   },
   stats: {
     totalMeetings: "Total Meetings",

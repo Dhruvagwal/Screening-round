@@ -6,12 +6,14 @@ import { AuthProvider } from "@/lib/auth/AuthContext";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const lora = Lora({
   variable: "--font-lora",
   subsets: ["latin"],
   style: ["italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -29,9 +31,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${lora.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
