@@ -2,13 +2,14 @@ export const authData = {
   login: {
     title: "Welcome Back",
     subtitle: "Sign in to access your calendar insights",
-    formTitle: "tune in",
+    formTitle: "Tune in",
     formDescription: "Enter your credentials to connect with your ambitious journey",
     submitText: "Sign In",
     loadingText: "Tuning in...",
     forgotPassword: "Forgot password?",
     signupPrompt: "Need access?",
-    signupLink: "Join the cohort"
+    signupLink: "Sign up",
+    imageSrc: "https://cdn.pixabay.com/photo/2020/09/19/23/42/architecture-5585737_960_720.jpg"
   },
   signup: {
     title: "Join the Cohort",
