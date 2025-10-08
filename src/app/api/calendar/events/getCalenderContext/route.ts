@@ -1,85 +1,119 @@
 import { NextRequest, NextResponse } from "next/server";
 import { composio } from "@/lib/composio/composio";
 import { AzureOpenAI } from "openai";
-const prompt = `
-You are an assistant that helps users manage and summarize their Google Calendar events.
-Your task is to help the user by fetching and summarizing events from their specified Google Calendar.
-and increase his productivity.`;
 
+/**
+ * SYSTEM PROMPT:
+ * Guides the model to use Composio tools effectively and produce useful summaries.
+ */
+const SYSTEM_PROMPT = `
+You are a smart assistant that helps users manage, analyze, and summarize their Google Calendar events.
+When the user asks for events, use the connected Google Calendar integration to fetch relevant data.
+Always respond clearly and helpfully to increase their productivity.
+`;
+
+/**
+ * CONFIGURE AZURE OPENAI
+ */
+const openai = new AzureOpenAI({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
+  endpoint: "https://aven-gpt.openai.azure.com/",
+  deployment: "gpt-4o",
+  apiVersion: "2024-12-01-preview",
+});
+
+/**
+ * GET /api/calendar
+ * Query parameters:
+ *  - userId: user's unique composio identifier
+ *  - prompt: natural language query from user (e.g., "Summarize my next 30 days of meetings")
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") || "xxx";
-    const propmt = searchParams.get("propmt") || "xxx";
+    const userId = searchParams.get("userId");
+    const userPrompt =
+      searchParams.get("prompt") ||
+      "Show me all meetings and events in the next 30 days.";
 
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Missing userId in query parameters" },
+        { status: 400 }
+      );
+    }
+
+    // Step 1: Load Google Calendar tools for the given user
     const tools = await composio.tools.get(userId, {
-      toolkits: ["GOOGLECALENDAR"],
+      toolkits: ["googlecalendar"],
     });
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: prompt,
-        },
-        {
-          role: "user",
-          content: propmt,
-        },
-      ],
-      tools: tools,
+    // Step 2: Ask the model how to proceed (and allow tool use)
+    const initialCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
-      tool_choice: "auto", // Explicitly tell the model it can use tools
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      tools,
+      tool_choice: "auto", // model decides whether to use tools
     });
 
-    const responseMessage = completion.choices[0].message;
-    // If there are tool calls, handle them
+    const responseMessage = initialCompletion.choices[0].message;
+
+    //  Step 3: If the model called any tools, execute them through Composio
     if (responseMessage.tool_calls) {
-      // Handle the tool calls and get calendar data
       const toolResults = await composio.provider.handleToolCalls(
         userId,
-        completion
+        initialCompletion
       );
 
-      // Make another completion to summarize the calendar data
+      //  Step 4: Summarize fetched calendar data
       const summaryCompletion = await openai.chat.completions.create({
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "Summarize these calendar events in a friendly way:",
+            content:
+              "Summarize these Google Calendar events in a friendly, helpful, and concise way:",
           },
           {
             role: "user",
             content: JSON.stringify(toolResults),
           },
         ],
-        model: "gpt-4o",
       });
+
       return NextResponse.json({
         success: true,
-        data: summaryCompletion.choices[0].message.content,
+        summary: summaryCompletion.choices[0].message.content,
+        rawEvents: toolResults,
       });
     }
 
+    //  Step 5: If no tools were called, return the model’s direct response
     return NextResponse.json({
       success: true,
-      data: responseMessage.content,
+      summary: responseMessage.content,
     });
-  } catch (error) {
-    console.error("Error:", error);
+  } catch (error: any) {
+    console.error("Calendar API Error:", error);
+
+    // Handle specific Composio errors more gracefully
+    if (error?.response?.status === 404) {
+      return NextResponse.json(
+        {
+          error:
+            "Google Calendar tool not found. Please ensure 'googlecalendar' toolkit is connected for this user.",
+          details: error.response.data,
+        },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: "Unexpected server error", details: error.message },
       { status: 500 }
     );
   }
 }
-
-const deployment = "https://aven-gpt.openai.azure.com/";
-const apiVersion = "2024-12-01-preview";
-
-const openai = new AzureOpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
-  deployment: "gpt-4o",
-  endpoint: deployment,
-  apiVersion: apiVersion,
-});

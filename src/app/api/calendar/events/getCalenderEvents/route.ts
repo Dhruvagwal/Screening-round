@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
     // Execute any tool calls requested by the AI
     const result = await composio.provider.handleToolCalls(userId, completion);
     const parsedResult = JSON.parse(result?.[0]?.content.toString());
-    console.log(parsedResult);
     return NextResponse.json({
       success: true,
       data: parsedResult,
