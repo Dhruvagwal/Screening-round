@@ -53,7 +53,8 @@ export interface UseCalendarDetailsReturn {
  * Hook to fetch detailed information for multiple calendars
  */
 export const useCalendarDetails = (): UseCalendarDetailsReturn => {
-  const { user } = useAuth();
+  const { user, connectedAccountId } = useAuth();
+
   if (!user) return {} as UseCalendarDetailsReturn;
 
   const [calendarDetails, setCalendarDetails] = useState<CalendarDetails[]>([]);
@@ -125,6 +126,7 @@ export const useCalendarDetails = (): UseCalendarDetailsReturn => {
         userId: user?.id ?? "",
         timeMin: oneWeekAgo.toISOString(),
         timeMax: oneMonthFromNow.toISOString(),
+        connectedAccountId: connectedAccountId || "",
       });
 
       const response = await fetch(

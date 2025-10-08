@@ -6,11 +6,6 @@ import { AzureOpenAI } from "openai";
  * SYSTEM PROMPT:
  * Guides the model to use Composio tools effectively and produce useful summaries.
  */
-const SYSTEM_PROMPT = `
-You are a smart assistant that helps users manage, analyze, and summarize their Google Calendar events.
-When the user asks for events, use the connected Google Calendar integration to fetch relevant data.
-Always respond clearly and helpfully to increase their productivity.
-`;
 
 /**
  * CONFIGURE AZURE OPENAI
@@ -31,10 +26,20 @@ const openai = new AzureOpenAI({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
     const userId = searchParams.get("userId");
-    const userPrompt =
-      searchParams.get("prompt") ||
-      "Show me all meetings and events in the next 30 days.";
+    const connectedAccountId = searchParams.get("connectedAccountId");
+    const timeMin = searchParams.get("timeMin");
+    const timeMax = searchParams.get("timeMax");
+
+    const SYSTEM_PROMPT = `
+      You are a smart assistant that helps users manage, analyze, and summarize their Google Calendar events.
+      When the user asks for events, use the connected Google Calendar integration to fetch relevant data.
+      Always respond clearly and helpfully to increase their productivity.
+      If the user provides a time range, ensure you only fetch events within that range. if not take only this range
+      ${timeMin || "now"} and ${timeMax || "end of time"}
+      `;
+    const userPrompt = searchParams.get("prompt");
 
     if (!userId) {
       return NextResponse.json(
@@ -53,7 +58,7 @@ export async function GET(request: NextRequest) {
       model: "gpt-4o",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt ?? "" },
       ],
       tools,
       tool_choice: "auto", // model decides whether to use tools
@@ -64,10 +69,12 @@ export async function GET(request: NextRequest) {
     if (responseMessage.tool_calls) {
       const toolResults = await composio.provider.handleToolCalls(
         userId,
-        initialCompletion
+        initialCompletion,
+        {
+          connectedAccountId: connectedAccountId || "",
+        }
       );
 
-     
       //  Step 4: Summarize fetched calendar data
       const summaryCompletion = await openai.chat.completions.create({
         model: "gpt-4o",

@@ -47,7 +47,6 @@ export async function addUserToken(
       )
       .select("*")
       .single();
-    console.log(data);
     if (error) {
       console.error("Error adding user token:", error);
       return {

@@ -6,9 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId") || "xxx";
+    const connectedAccountId = searchParams.get("connectedAccountId") || "xxx";
     const timeMin = searchParams.get("timeMin");
     const timeMax = searchParams.get("timeMax");
-
     const tool = await composio.tools.get(userId, {
       tools: ["GOOGLECALENDAR_EVENTS_LIST"],
     });
@@ -37,7 +37,9 @@ export async function GET(request: NextRequest) {
     });
 
     // Execute any tool calls requested by the AI
-    const result = await composio.provider.handleToolCalls(userId, completion);
+    const result = await composio.provider.handleToolCalls(userId, completion, {
+      connectedAccountId: connectedAccountId,
+    });
     const parsedResult = JSON.parse(result?.[0]?.content.toString());
     return NextResponse.json({
       success: true,

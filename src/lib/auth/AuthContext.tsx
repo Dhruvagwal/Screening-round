@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setConnectedAccountId(null);
       return;
     }
-
     try {
       const result = await getUserToken(user.id);
       if (result.success && result.data) {

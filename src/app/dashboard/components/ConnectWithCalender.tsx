@@ -1,9 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import React, { useEffect } from "react";
 import { useComposio } from "../hooks/useCalenderAuth";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -21,14 +18,14 @@ import {
   Zap,
 } from "lucide-react";
 import { addUserToken } from "@/lib/supabase/tokens";
+import { useRouter } from "next/navigation";
 
 function ConnectWithCalender() {
+  const router = useRouter();
   const { user, refreshConnectedAccount } = useAuth();
-  const [url, setUrl] = React.useState("");
-  
+
   // User token management
   const {
-    saveToken,
     deleteToken,
     isLoading: isTokenLoading,
     error: tokenError,
@@ -36,13 +33,8 @@ function ConnectWithCalender() {
     connectedAccountId,
   } = useUserToken();
 
-  useEffect(() => {
-    setUrl(window.location.origin);
-  }, []);
-
   const composioConfig = {
     userId: user?.id || "",
-    callbackUrl: `${url}/dashboard`, // Redirect back to dashboard after auth
   };
 
   const {
@@ -50,7 +42,6 @@ function ConnectWithCalender() {
     isConnected,
     error,
     connectAccount,
-    waitForConnection,
     disconnectAccount,
     resetState,
   } = useComposio(composioConfig);
@@ -63,7 +54,6 @@ function ConnectWithCalender() {
         const tokenDeleted = await deleteToken();
         if (tokenDeleted) {
           console.log("Token removed from database");
-          // Refresh the auth context to update connectedAccountId
           await refreshConnectedAccount();
         } else {
           console.error("Failed to remove token:", tokenError);
@@ -72,24 +62,8 @@ function ConnectWithCalender() {
     } else {
       const connectionRequest = await connectAccount();
       if (connectionRequest) {
-        window.open(connectionRequest.redirectUrl ?? "", "_blank");
+        router.replace(connectionRequest.redirectUrl ?? "");
         try {
-          const connectedAccount = await waitForConnection(
-            connectionRequest.id
-          );
-          
-          // Save the connected account ID to Supabase
-          if (connectedAccount?.id) {
-            const tokenSaved = await saveToken(connectedAccount.id);
-            if (tokenSaved) {
-              console.log("Connected account ID saved to database");
-              // Refresh the auth context to update connectedAccountId
-              await refreshConnectedAccount();
-            } else {
-              console.error("Failed to save token:", tokenError);
-              // Still continue with the connection even if token save fails
-            }
-          }
         } catch (err) {
           console.error("Failed to establish connection:", err);
         }
@@ -106,13 +80,13 @@ function ConnectWithCalender() {
 
   const getConnectionStatus = () => {
     if (isConnecting || isTokenLoading) {
-      const loadingText = isTokenLoading 
-        ? "Saving connection details..." 
+      const loadingText = isTokenLoading
+        ? "Saving connection details..."
         : "Establishing connection...";
       const loadingDesc = isTokenLoading
         ? "Securely storing your connection information"
         : "Please wait while we securely connect to your Google Calendar";
-        
+
       return {
         icon: <Loader2 className="h-8 w-8 animate-spin" />,
         text: loadingText,
@@ -175,10 +149,12 @@ function ConnectWithCalender() {
                     Google Calendar Connected
                   </p>
                   <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                    {hasToken 
-                      ? `Syncing events and schedules in real-time • Account ID: ${connectedAccountId?.slice(0, 8)}...`
-                      : "Syncing events and schedules in real-time"
-                    }
+                    {hasToken
+                      ? `Syncing events and schedules in real-time • Account ID: ${connectedAccountId?.slice(
+                          0,
+                          8
+                        )}...`
+                      : "Syncing events and schedules in real-time"}
                   </p>
                 </div>
               </div>
@@ -216,7 +192,8 @@ function ConnectWithCalender() {
                     </p>
                     {tokenError && (
                       <p className="text-xs text-destructive/70 mt-1">
-                        Your calendar connection may work, but preferences won't be saved.
+                        Your calendar connection may work, but preferences won't
+                        be saved.
                       </p>
                     )}
                   </div>

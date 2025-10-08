@@ -30,7 +30,7 @@ export interface UseUserTokenReturn {
  * Automatically loads the token when the user is authenticated
  */
 export function useUserToken(): UseUserTokenReturn {
-  const { user } = useAuth();
+  const { user, refreshConnectedAccount } = useAuth();
   const [userToken, setUserToken] = useState<UserToken | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +68,6 @@ export function useUserToken(): UseUserTokenReturn {
         setError("User not authenticated");
         return false;
       }
-
-      console.log("trigger");
       try {
         setIsLoading(true);
         setError(null);
@@ -95,6 +93,7 @@ export function useUserToken(): UseUserTokenReturn {
         const result = await addUserToken(user.id, connectedAccountId);
 
         if (result.success && result.data) {
+          await refreshConnectedAccount();
           setUserToken(result.data);
           return true;
         } else {

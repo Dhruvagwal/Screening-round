@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 
 function CalenderMeetings() {
-  const { connectedAccountId } = useAuth();
   const {
     calendars,
     isLoadingCalendars,

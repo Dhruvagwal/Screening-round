@@ -42,13 +42,15 @@ export const useComposio = (config: ComposioConfig) => {
     }));
 
     try {
-      const connectionRequest = await composio.connectedAccounts.link(
-        config.userId,
-        authConfigId,
-        {
-          callbackUrl: process.env.NEXT_PUBLIC_COMPOSIO_CALLBACK_URL,
-        }
-      );
+      const res = await fetch("/api/composio/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: config.userId,
+          callbackUrl: window.location.origin + "/connect",
+        }),
+      });
+      const connectionRequest = await res.json();
       setState((prev) => ({
         ...prev,
         redirectUrl: connectionRequest.redirectUrl || null,
@@ -75,7 +77,7 @@ export const useComposio = (config: ComposioConfig) => {
         }));
         return;
       }
-
+      console.log("Waiting for connection with ID:", connectionRequestId);
       try {
         const connectedAccount =
           await composio.connectedAccounts.waitForConnection(
