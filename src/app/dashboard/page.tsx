@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { dashboardData } from "@/data/dashboard";
+import { CalendarDashboard } from "@/components/calendar/CalendarDashboard";
 import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
@@ -107,75 +108,9 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Calendar Overview */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="font-serif italic text-card-foreground">
-                {dashboardData.sections.calendar.title}
-              </CardTitle>
-              <CardDescription>
-                {dashboardData.sections.calendar.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm text-card-foreground">Google Calendar Status</span>
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                    Connected
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm text-card-foreground">MCP Protocol</span>
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                    Active
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm text-card-foreground">Last Sync</span>
-                  <span className="text-xs text-muted-foreground">
-                    {currentTime.toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="font-serif italic text-card-foreground">
-                {dashboardData.sections.meetings.title}
-              </CardTitle>
-              <CardDescription>
-                {dashboardData.sections.meetings.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {mockActivities.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div>
-                      <div className="text-sm font-medium text-card-foreground">
-                        {activity.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {activity.time} • {activity.type}
-                      </div>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      activity.status === 'completed' 
-                        ? 'bg-muted text-muted-foreground' 
-                        : 'bg-primary text-primary-foreground'
-                    }`}>
-                      {activity.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Calendar Dashboard - Full width integration */}
+        <div className="mt-8">
+          <CalendarDashboard />
         </div>
 
         {/* Quick Actions */}

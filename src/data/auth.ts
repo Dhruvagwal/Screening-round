@@ -16,9 +16,9 @@ export const authData = {
     subtitle: "Start your journey with ambitious builders",
     formTitle: "Create Account",
     formDescription: "Enter your information to join our community of builders",
-    submitText: "Join Cohort",
+    submitText: "Let's Go",
     loadingText: "Creating your profile...",
-    loginPrompt: "Already part of the cohort?",
+    loginPrompt: "Already part of the Us?",
     loginLink: "Tune in"
   }
 };
