@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function MeetingCardSkeleton() {
   return (
-    <Card className="border-l-4 border-l-gray-300">
+    <Card className="">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-2">

@@ -28,7 +28,7 @@ export function UpcomingMeetings({
 }: UpcomingMeetingsProps) {
   if (error) {
     return (
-      <Card>
+      <Card className=''>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
@@ -49,7 +49,7 @@ export function UpcomingMeetings({
   }
 
   return (
-    <Card>
+    <Card className='rounded-none pr-16'>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

@@ -49,7 +49,7 @@ export function PastMeetings({
   }
 
   return (
-    <Card>
+    <Card className='rounded-none'>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

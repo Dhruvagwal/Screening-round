@@ -81,6 +81,7 @@ export interface Event {
   summary: string;
   description?: string;
   hangoutLink?: string;
+  htmlLink: string;
   start: {
     dateTime?: string;
     date?: string;
@@ -91,6 +92,10 @@ export interface Event {
   };
   location?: string;
   status?: string;
+  organizer?: {
+    email: string;
+    self?: boolean;
+  };
 }
 
 export interface EventsApiResponse {

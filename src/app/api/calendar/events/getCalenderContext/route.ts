@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const timeMax = searchParams.get("timeMax");
 
     const tool = await composio.tools.get(userId, {
-      tools: ["GOOGLECALENDAR_EVENTS_LIST"],
+      toolkits: ["GOOGLECALENDAR"],
     });
 
     if (!tool || tool.length === 0) {

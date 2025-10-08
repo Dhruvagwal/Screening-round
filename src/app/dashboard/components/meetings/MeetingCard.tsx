@@ -1,20 +1,14 @@
-import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Clock,
   MapPin,
   Users,
   ChevronRight,
-  Video,
-  ExternalLink,
-} from 'lucide-react';
-import { Event } from '../../types';
+} from "lucide-react";
+import { Event } from "../../types";
+import { formatDateTime } from "../../utils/datetime";
 
 export interface Meeting extends Event {
   isUpcoming?: boolean;
@@ -29,54 +23,20 @@ interface MeetingCardProps {
   onCardClick?: (meeting: Meeting) => void;
 }
 
-export function MeetingCard({ meeting, onCardClick }: MeetingCardProps) {
-  const formatDateTime = (event: Event): string => {
-    const date = new Date(event.start.dateTime || event.start.date!);
-    const endDate = new Date(event.end?.dateTime || event.end?.date!);
-
-    const dateStr = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year:
-        date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
-    });
-
-    if (event.start.dateTime) {
-      const timeStr = date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-      const endTimeStr = endDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-      return `${dateStr} ${timeStr} - ${endTimeStr}`;
-    }
-
-    return `${dateStr} (All day)`;
-  };
-
-  const hasVideoCall = (event: Event): boolean => {
-    return !!(
-      event.description?.includes('meet.google.com') ||
-      event.description?.includes('zoom.us') ||
-      event.description?.includes('teams.microsoft.com')
+export function MeetingCard({ meeting }: MeetingCardProps) {
+  const handleCardClick = () => {
+    console.log("Meeting clicked:", meeting);
+    window.open(
+      meeting.hangoutLink || meeting.location || meeting.htmlLink,
+      "_blank"
     );
   };
 
-  const handleCardClick = () => {
-    if (onCardClick) {
-      onCardClick(meeting);
-    }
-  };
-
-  const borderColor = meeting.calendarColor || '#1967d2';
+  const borderColor = meeting.calendarColor || "#1967d2";
 
   return (
     <Card
-      className="border-l-4 cursor-pointer hover:shadow-md transition-shadow"
+      className="cursor-pointer rounded-none border-b transition-shadow"
       style={{ borderLeftColor: borderColor }}
       onClick={handleCardClick}
     >
@@ -84,7 +44,7 @@ export function MeetingCard({ meeting, onCardClick }: MeetingCardProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-base font-medium line-clamp-2">
-              {meeting.summary || 'No Title'}
+              {meeting.summary || "No Title"}
             </CardTitle>
             <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
               <Clock className="h-4 w-4" />
@@ -117,33 +77,19 @@ export function MeetingCard({ meeting, onCardClick }: MeetingCardProps) {
           {meeting.description && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Users className="h-4 w-4" />
-              <span className="line-clamp-1">Event details available</span>
+              <span className="line-clamp-1">{meeting.description}</span>
             </div>
           )}
 
-          {meeting.calendarName && (
+          {meeting.organizer && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: borderColor }}
               />
-              <span>{meeting.calendarName}</span>
+              <span>{meeting.organizer?.email}</span>
             </div>
           )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {hasVideoCall(meeting) && (
-                <div className="flex items-center gap-1 text-xs text-blue-600">
-                  <Video className="h-3 w-3" />
-                  <span>Video call</span>
-                </div>
-              )}
-            </div>
-            {meeting.hangoutLink && (
-              <ExternalLink className="h-4 w-4 text-gray-400" />
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>

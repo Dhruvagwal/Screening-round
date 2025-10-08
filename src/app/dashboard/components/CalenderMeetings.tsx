@@ -21,7 +21,6 @@ function CalenderMeetings() {
   } = useCalenderLists();
   
   const {
-    meetings,
     upcomingMeetings,
     pastMeetings,
     isLoadingEvents,
@@ -71,11 +70,16 @@ function CalenderMeetings() {
   // Show loading state if calendars are still loading
   if (isLoadingCalendars) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading Calendar Connection...</CardTitle>
-          </CardHeader>
+      <div className="grid grid-cols-2 gap-16">
+        <Card className="rounded-none">
+          <CardContent>
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-none">
           <CardContent>
             <div className="animate-pulse space-y-3">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -104,7 +108,7 @@ function CalenderMeetings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-16 divide-x lg:grid-cols-2">
       <UpcomingMeetings
         meetings={upcomingMeetings}
         isLoading={isLoadingEvents}
@@ -112,7 +116,6 @@ function CalenderMeetings() {
         onRefresh={handleRefreshEvents}
         onMeetingClick={handleMeetingClick}
       />
-      
       <PastMeetings
         meetings={pastMeetings}
         isLoading={isLoadingEvents}
