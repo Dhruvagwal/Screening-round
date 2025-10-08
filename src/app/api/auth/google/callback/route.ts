@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleCalendarService } from '@/lib/google/calendar';
-import { GoogleAuthCredentials } from '@/types/calendar';
+import { ComposioCalendarService } from '@/lib/composio';
 
-const getGoogleCredentials = (): GoogleAuthCredentials => {
-  return {
-    client_id: process.env.GOOGLE_CLIENT_ID || '',
-    client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirect_uris: [process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback'],
-  };
-};
-
-// Handle Google OAuth callback
+// Handle Google OAuth callback via Composio
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get('code');
     const error = searchParams.get('error');
+    const connectionId = searchParams.get('connectionId');
+    const userId = searchParams.get('userId') || 'default-user';
 
     // Handle OAuth error
     if (error) {
@@ -24,37 +16,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Handle missing code
-    if (!code) {
-      return NextResponse.redirect(
-        new URL('/dashboard?error=missing_authorization_code', request.url)
-      );
-    }
-
-    const credentials = getGoogleCredentials();
+    // Get Composio API key from environment
+    const composioApiKey = process.env.COMPOSIO_API_KEY;
     
-    if (!credentials.client_id || !credentials.client_secret) {
+    if (!composioApiKey) {
       return NextResponse.redirect(
-        new URL('/dashboard?error=missing_google_credentials', request.url)
+        new URL('/dashboard?error=missing_composio_api_key', request.url)
       );
     }
 
-    // Exchange code for tokens
-    const calendarService = new GoogleCalendarService(credentials);
-    const tokens = await calendarService.getTokens(code);
+    // Create Composio service instance
+    const composioService = new ComposioCalendarService(
+      { apiKey: composioApiKey },
+      userId
+    );
 
-    // In a real application, you would store these tokens securely
-    // For now, we'll redirect with the access token
-    const dashboardUrl = new URL('/dashboard', request.url);
-    dashboardUrl.searchParams.set('access_token', tokens.access_token);
-    dashboardUrl.searchParams.set('auth_success', 'true');
-
-    return NextResponse.redirect(dashboardUrl);
+    // Verify the connection was established
+    const isConnected = await composioService.isConnected();
+    
+    if (isConnected) {
+      // Success - redirect to dashboard with success flag
+      const dashboardUrl = new URL('/dashboard', request.url);
+      dashboardUrl.searchParams.set('auth_success', 'true');
+      dashboardUrl.searchParams.set('provider', 'composio-google');
+      
+      return NextResponse.redirect(dashboardUrl);
+    } else {
+      // Connection not established
+      return NextResponse.redirect(
+        new URL('/dashboard?error=connection_not_established', request.url)
+      );
+    }
 
   } catch (error) {
-    console.error('Google OAuth Callback Error:', error);
+    console.error('Composio Google OAuth Callback Error:', error);
     
-    const errorMessage = error instanceof Error ? error.message : 'oauth_callback_error';
+    const errorMessage = error instanceof Error ? error.message : 'composio_callback_error';
     return NextResponse.redirect(
       new URL(`/dashboard?error=${encodeURIComponent(errorMessage)}`, request.url)
     );

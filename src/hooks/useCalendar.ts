@@ -11,6 +11,8 @@ interface UseCalendarReturn {
   refreshEvents: () => Promise<void>;
   authenticateGoogle: () => Promise<void>;
   isAuthenticated: boolean;
+  userId: string;
+  setUserId: (id: string) => void;
 }
 
 export function useCalendar(): UseCalendarReturn {
@@ -19,42 +21,50 @@ export function useCalendar(): UseCalendarReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string>('default-user');
 
-  // Check if user is authenticated (has access token)
+  // Check if user is authenticated via Composio
   useEffect(() => {
     const checkAuth = () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token') || localStorage.getItem('google_access_token');
+      const authSuccess = urlParams.get('auth_success');
+      const provider = urlParams.get('provider');
       
-      if (accessToken) {
+      if (authSuccess === 'true' && provider === 'composio-google') {
         setIsAuthenticated(true);
-        localStorage.setItem('google_access_token', accessToken);
-        // Remove token from URL for security
-        if (urlParams.get('access_token')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
+        localStorage.setItem('composio_google_connected', 'true');
+        localStorage.setItem('composio_user_id', userId);
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        // Check if previously authenticated
+        const wasConnected = localStorage.getItem('composio_google_connected');
+        const storedUserId = localStorage.getItem('composio_user_id');
+        
+        if (wasConnected === 'true' && storedUserId) {
+          setIsAuthenticated(true);
+          setUserId(storedUserId);
         }
       }
     };
 
     checkAuth();
-  }, []);
+  }, [userId]);
 
-  // Fetch calendar events
-  const fetchEvents = async (accessToken?: string): Promise<void> => {
+  // Fetch calendar events via Composio
+  const fetchEvents = async (): Promise<void> => {
     setLoading(true);
     setError(null);
 
     try {
-      const token = accessToken || localStorage.getItem('google_access_token');
-      
-      if (!token) {
-        throw new Error('No access token available. Please authenticate first.');
+      if (!userId) {
+        throw new Error('No user ID available. Please set user ID first.');
       }
 
-      const response = await fetch('/api/calendar', {
+      const response = await fetch(`/api/calendar?userId=${encodeURIComponent(userId)}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -74,10 +84,11 @@ export function useCalendar(): UseCalendarReturn {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       
-      // If token is invalid, clear authentication
-      if (errorMessage.includes('Invalid') || errorMessage.includes('expired')) {
+      // If connection not found, clear authentication
+      if (errorMessage.includes('not connected') || errorMessage.includes('authenticate first')) {
         setIsAuthenticated(false);
-        localStorage.removeItem('google_access_token');
+        localStorage.removeItem('composio_google_connected');
+        localStorage.removeItem('composio_user_id');
       }
     } finally {
       setLoading(false);
@@ -117,18 +128,35 @@ export function useCalendar(): UseCalendarReturn {
     }
   };
 
-  // Authenticate with Google
+  // Authenticate with Google via Composio
   const authenticateGoogle = async (): Promise<void> => {
     try {
-      const response = await fetch('/api/auth/google');
+      if (!userId) {
+        throw new Error('No user ID set. Please set user ID first.');
+      }
+
+      const response = await fetch(`/api/auth/google?userId=${encodeURIComponent(userId)}`);
       const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to get Google auth URL');
       }
 
-      // Redirect to Google OAuth
-      window.location.href = data.data.authUrl;
+      // Check if already connected
+      if (data.data.alreadyConnected) {
+        setIsAuthenticated(true);
+        localStorage.setItem('composio_google_connected', 'true');
+        localStorage.setItem('composio_user_id', userId);
+        await fetchEvents(); // Refresh events
+        return;
+      }
+
+      // Redirect to Composio OAuth
+      if (data.data.authUrl) {
+        window.location.href = data.data.authUrl;
+      } else {
+        throw new Error('No authentication URL received');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
       setError(errorMessage);
@@ -137,22 +165,22 @@ export function useCalendar(): UseCalendarReturn {
 
   // Refresh events (use mock data if not authenticated)
   const refreshEvents = async (): Promise<void> => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userId) {
       await fetchEvents();
     } else {
       await fetchMockEvents();
     }
   };
 
-  // Auto-fetch events when authenticated
+  // Auto-fetch events when authenticated or userId changes
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userId) {
       fetchEvents();
     } else {
       // Load mock data by default
       fetchMockEvents();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
   return {
     upcomingEvents,
@@ -162,5 +190,7 @@ export function useCalendar(): UseCalendarReturn {
     refreshEvents,
     authenticateGoogle,
     isAuthenticated,
+    userId,
+    setUserId,
   };
 }

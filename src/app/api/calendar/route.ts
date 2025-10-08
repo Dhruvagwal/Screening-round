@@ -1,71 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleCalendarService } from '@/lib/google/calendar';
-import { CalendarApiResponse, GoogleAuthCredentials } from '@/types/calendar';
-
-// Mock credentials - In production, these should come from environment variables
-const getGoogleCredentials = (): GoogleAuthCredentials => {
-  return {
-    client_id: process.env.GOOGLE_CLIENT_ID || '',
-    client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirect_uris: [process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback'],
-  };
-};
+import { ComposioCalendarService } from '@/lib/composio';
+import { CalendarApiResponse } from '@/types/calendar';
 
 export async function GET(request: NextRequest): Promise<NextResponse<CalendarApiResponse>> {
   try {
-    // Get access token from headers or query params
-    const authHeader = request.headers.get('authorization');
-    const accessToken = authHeader?.replace('Bearer ', '') || request.nextUrl.searchParams.get('access_token');
-
-    if (!accessToken) {
+    // Get Composio API key from environment
+    const composioApiKey = process.env.COMPOSIO_API_KEY;
+    
+    if (!composioApiKey) {
       return NextResponse.json({
         success: false,
-        error: 'No access token provided. Please authenticate with Google first.',
-      }, { status: 401 });
-    }
-
-    // Get Google credentials
-    const credentials = getGoogleCredentials();
-    if (!credentials.client_id || !credentials.client_secret) {
-      return NextResponse.json({
-        success: false,
-        error: 'Google OAuth credentials not configured. Please check environment variables.',
+        error: 'Composio API key not configured. Please check COMPOSIO_API_KEY environment variable.',
       }, { status: 500 });
     }
 
-    // Create tokens object
-    const tokens = {
-      access_token: accessToken,
-      scope: 'https://www.googleapis.com/auth/calendar.readonly',
-      token_type: 'Bearer',
-    };
+    // Get user ID from query parameters (in production, this would come from session/auth)
+    const userId = request.nextUrl.searchParams.get('userId') || 'default-user';
 
-    // Initialize Google Calendar service
-    const calendarService = new GoogleCalendarService(credentials, tokens);
+    // Create Composio service instance
+    const composioService = new ComposioCalendarService(
+      { apiKey: composioApiKey },
+      userId
+    );
 
-    // Validate tokens
-    const isValid = await calendarService.validateTokens();
-    if (!isValid) {
+    // Check if user has connected Google Calendar
+    const isConnected = await composioService.isConnected();
+    
+    if (!isConnected) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid or expired access token. Please re-authenticate.',
+        error: 'Google Calendar not connected. Please authenticate first.',
       }, { status: 401 });
     }
 
-    // Fetch calendar events
-    const events = await calendarService.getEvents();
+    // Fetch upcoming and past events
+    const [upcomingResult, pastResult] = await Promise.all([
+      composioService.getUpcomingEvents(),
+      composioService.getPastEvents()
+    ]);
+
+    // Handle errors from either request
+    if (!upcomingResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: upcomingResult.error || 'Failed to fetch upcoming events',
+      }, { status: 500 });
+    }
+
+    if (!pastResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: pastResult.error || 'Failed to fetch past events',
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        upcoming: events.upcoming,
-        past: events.past,
+        upcoming: upcomingResult.events || [],
+        past: pastResult.events || [],
       },
-      message: `Successfully fetched ${events.upcoming.length} upcoming and ${events.past.length} past events`,
+      message: `Successfully fetched ${upcomingResult.events?.length || 0} upcoming and ${pastResult.events?.length || 0} past events via Composio`,
     });
 
   } catch (error) {
-    console.error('Calendar API Error:', error);
+    console.error('Composio Calendar API Error:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     

@@ -1,5 +1,38 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Features
+
+- **Modular Architecture**: Clean, maintainable components organized by feature
+- **Google Calendar Integration**: Powered by Composio for seamless OAuth authentication
+- **Form Utilities**: Reusable form components with React Hook Form + Zod validation
+- **Dashboard System**: Comprehensive dashboard with real-time updates
+- **TypeScript**: Full type safety throughout the application
+
+## Google Calendar Integration
+
+This project uses [Composio](https://composio.dev) for Google Calendar integration, providing:
+
+- **Simplified OAuth**: Composio handles the complex OAuth 2.0 flow
+- **Unified API**: Single interface for multiple calendar providers
+- **Built-in Security**: Enterprise-grade security and token management
+- **Easy Scaling**: Add more integrations (Outlook, Apple Calendar) with minimal code changes
+
+### Setup Composio
+
+1. Create a Composio account at [https://app.composio.dev/](https://app.composio.dev/)
+2. Get your API key from the dashboard
+3. Add it to your `.env.local` file:
+
+```bash
+COMPOSIO_API_KEY=your_composio_api_key_here
+```
+
+### API Endpoints
+
+- `GET /api/auth/google` - Initiate Google Calendar authentication
+- `GET /api/auth/google/callback` - Handle OAuth callback
+- `GET /api/calendar?userId=<user_id>` - Fetch calendar events
+
 ## Getting Started
 
 First, run the development server:

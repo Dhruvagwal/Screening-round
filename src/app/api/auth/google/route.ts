@@ -1,42 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleCalendarService } from '@/lib/google/calendar';
-import { GoogleAuthCredentials } from '@/types/calendar';
+import { ComposioCalendarService } from '@/lib/composio';
 
-const getGoogleCredentials = (): GoogleAuthCredentials => {
-  return {
-    client_id: process.env.GOOGLE_CLIENT_ID || '',
-    client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirect_uris: [process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback'],
-  };
-};
-
-// Generate Google OAuth URL
-export async function GET(): Promise<NextResponse> {
+// Generate Google OAuth URL using Composio
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const credentials = getGoogleCredentials();
+    // Get Composio API key from environment
+    const composioApiKey = process.env.COMPOSIO_API_KEY;
     
-    if (!credentials.client_id || !credentials.client_secret) {
+    if (!composioApiKey) {
       return NextResponse.json({
         success: false,
-        error: 'Google OAuth credentials not configured. Please check environment variables.',
+        error: 'Composio API key not configured. Please check COMPOSIO_API_KEY environment variable.',
       }, { status: 500 });
     }
 
-    const calendarService = new GoogleCalendarService(credentials);
-    const authUrl = calendarService.generateAuthUrl();
+    // Get user ID from query parameters (in production, this would come from session/auth)
+    const userId = request.nextUrl.searchParams.get('userId') || 'default-user';
+
+    // Create Composio service instance
+    const composioService = new ComposioCalendarService(
+      { apiKey: composioApiKey },
+      userId
+    );
+
+    // Check if already connected
+    const isConnected = await composioService.isConnected();
+    if (isConnected) {
+      return NextResponse.json({
+        success: true,
+        data: { alreadyConnected: true },
+        message: 'Google Calendar already connected for this user',
+      });
+    }
+
+    // Initiate new connection
+    const result = await composioService.initiateConnection();
+
+    if (!result.success) {
+      return NextResponse.json({
+        success: false,
+        error: result.error || 'Failed to initiate Google Calendar connection',
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
-      data: { authUrl },
-      message: 'Google OAuth URL generated successfully',
+      data: { 
+        authUrl: result.authUrl,
+        connectionId: result.connectionId
+      },
+      message: 'Google OAuth URL generated successfully via Composio',
     });
 
   } catch (error) {
-    console.error('Google Auth Error:', error);
+    console.error('Composio Google Auth Error:', error);
     
     return NextResponse.json({
       success: false,
-      error: 'Failed to generate Google OAuth URL',
+      error: 'Failed to generate Google OAuth URL via Composio',
     }, { status: 500 });
   }
 }
