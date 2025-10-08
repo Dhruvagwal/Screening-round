@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { composio } from "@/lib/composio/composio";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@/app/api/lib/createClient";
-
 interface GetCalendarListParams {
   userId: string;
   connectedAccountId?: string;
