@@ -26,10 +26,11 @@ export const useComposio = (config: ComposioConfig) => {
 
   // Initiate connection
   const connectAccount = useCallback(async () => {
-    if (!config.userId) {
+    if (!composio || !authConfigId || !config.userId) {
       setState((prev) => ({
         ...prev,
-        error: "Missing required configuration: userId",
+        error:
+          "Missing required configuration: apiKey, authConfigId, or userId",
       }));
       return;
     }
@@ -42,20 +43,13 @@ export const useComposio = (config: ComposioConfig) => {
     }));
 
     try {
-      // Call your Next.js server-side API route instead of composio directly
-      const res = await fetch("/api/composio/link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: config.userId }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to create connection link");
-      }
-
-      const connectionRequest = await res.json();
-
+      const connectionRequest = await composio.connectedAccounts.link(
+        config.userId,
+        authConfigId,
+        {
+          callbackUrl: process.env.NEXT_PUBLIC_COMPOSIO_API_KEY,
+        }
+      );
       setState((prev) => ({
         ...prev,
         redirectUrl: connectionRequest.redirectUrl || null,
@@ -70,7 +64,7 @@ export const useComposio = (config: ComposioConfig) => {
         error: error instanceof Error ? error.message : "Connection failed",
       }));
     }
-  }, [config.userId]);
+  }, [composio, authConfigId, config.userId, config.callbackUrl]);
 
   // Wait for connection establishment
   const waitForConnection = useCallback(

@@ -42,7 +42,7 @@ function ConnectWithCalender() {
 
   const composioConfig = {
     userId: user?.id || "",
-    callbackUrl: `${url}/callback`,
+    callbackUrl: `${url}/dashboard`, // Redirect back to dashboard after auth
   };
 
   const {
