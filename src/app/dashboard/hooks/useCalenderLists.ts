@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useState, useEffect, useCallback } from "react";
 import { Calendar, Event } from "../types";
 
-export const useCalenderData = () => {
+export const useCalenderLists = () => {
   const { user, connectedAccountId } = useAuth();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [events, setEvents] = useState<Event[]>([]);

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import React, { useEffect } from "react";
-import { useComposio } from "../hooks/useComposioAuth";
+import { useComposio } from "../hooks/useCalenderAuth";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
   Calendar,

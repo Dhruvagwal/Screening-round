@@ -5,6 +5,7 @@ import { dashboardData } from "@/data/dashboard";
 import { useState } from "react";
 import ConnectWithCalender from "./ConnectWithCalender";
 import CalenderList from "./CalenderList";
+import CalenderMeetings from "./CalenderMeetings";
 
 export function DashboardLayout() {
   const [isConnecting, setIsConnecting] = useState(false); // Placeholder to avoid lint error for now
@@ -21,6 +22,7 @@ export function DashboardLayout() {
             />
             <CalenderList />
             <CalendarDashboard />
+            <CalenderMeetings />
           </div>
         ) : (
           <ConnectWithCalender />

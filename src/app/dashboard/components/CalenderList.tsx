@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { useCalenderData } from "../hooks/useCalenderLists";
+import { useCalenderLists } from "../hooks/useCalenderLists";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,13 +15,12 @@ import { Calendar as CalendarType } from "../types";
 
 function CalenderList() {
   const { calendars, isLoadingCalendars, error, fetchCalendars, clearError } =
-    useCalenderData();
+    useCalenderLists();
 
   // Fetch calendars on component mount
   useEffect(() => {
     fetchCalendars();
   }, [fetchCalendars]);
-  console.log(calendars);
   const getCalendarIcon = (calendar: CalendarType) => {
     if (calendar.primary) return <Crown className="h-3 w-3" />;
     if (calendar.accessRole === "owner") return <Lock className="h-3 w-3" />;
