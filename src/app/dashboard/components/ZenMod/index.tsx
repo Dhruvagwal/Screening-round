@@ -34,7 +34,6 @@ function ZenMod() {
       }
 
       const data = await response.json();
-
       if (data.success && data.data) {
         return data.data;
       } else {

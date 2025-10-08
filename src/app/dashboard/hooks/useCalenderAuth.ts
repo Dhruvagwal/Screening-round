@@ -43,6 +43,7 @@ export const useComposio = (config: ComposioConfig) => {
     }));
 
     try {
+      console.log(config.callbackUrl || window.location.origin + "/callback");
       const connectionRequest = await composio.connectedAccounts.link(
         config.userId,
         authConfigId,
