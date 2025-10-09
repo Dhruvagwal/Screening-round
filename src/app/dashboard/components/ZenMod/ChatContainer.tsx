@@ -55,38 +55,37 @@ export function ChatContainer({
 
   return (
     <div
-      className={`flex flex-col w-full h-full ${className}`}
+      className={`flex border-l h-screen flex-col ${className}`}
       ref={containerRef}
     >
       {/* Header */}
       <ChatHeader onClose={onClose} />
-      <ScrollArea className="h-[75vh] w-full">
+      <ScrollArea className="h-[calc(100vh-144px)] w-full">
         {/* Messages Area */}
-        <div>
-          {messages.length === 0 ? (
-            <WelcomeScreen onQuickAction={handleSendMessage} />
-          ) : (
-            <div className="space-y-0">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
 
-              {/* Typing Indicator */}
-              {isTyping && (
-                <MessageBubble
-                  message={{
-                    id: "typing",
-                    content: "",
-                    role: "assistant",
-                    timestamp: new Date(),
-                    isTyping: true,
-                  }}
-                />
-              )}
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+        {messages.length === 0 ? (
+          <WelcomeScreen onQuickAction={handleSendMessage} />
+        ) : (
+          <div className="space-y-0">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <MessageBubble
+                message={{
+                  id: "typing",
+                  content: "",
+                  role: "assistant",
+                  timestamp: new Date(),
+                  isTyping: true,
+                }}
+              />
+            )}
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </ScrollArea>
 
       {/* Input */}

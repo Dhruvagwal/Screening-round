@@ -20,7 +20,7 @@ export function ChatHeader({
   subtitle = "Your intelligent calendar assistant" 
 }: ChatHeaderProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-background/10 backdrop-blur-sm">
+    <div className="flex items-center h-16 border-b justify-between p-4 bg-background/10 backdrop-blur-sm">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 flex items-center justify-center">
           <Sparkles className="h-4 w-4 text-white" />

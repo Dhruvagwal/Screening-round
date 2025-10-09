@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import ChatContainer from "./ChatContainer";
@@ -25,8 +25,8 @@ function ZenMod() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+    <Drawer  direction="right" open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
         <Button
           variant="outline"
           size="sm"
@@ -35,9 +35,9 @@ function ZenMod() {
           <Sparkles className="h-4 w-4" />
           ZenMod AI
         </Button>
-      </DialogTrigger>
+      </DrawerTrigger>
 
-      <DialogContent className="min-w-7xl p-0 gap-0 overflow-hidden">
+      <DrawerContent className="w-1/2 p-0 gap-0 overflow-hidden">
         <ChatContainer
           messages={messages}
           setMessages={setMessages}
@@ -46,8 +46,8 @@ function ZenMod() {
           isLoading={isLoading}
           className="h-full"
         />
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

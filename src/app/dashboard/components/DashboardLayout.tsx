@@ -7,6 +7,7 @@ import ConnectWithCalender from "./ConnectWithCalender";
 import CalenderList from "./CalenderList";
 import CalenderMeetings from "./CalenderMeetings";
 import { useAuth } from "@/lib/auth/AuthContext";
+import ZenMod from "./ZenMod";
 
 export function DashboardLayout() {
   const { connectedAccountId } = useAuth();
@@ -15,15 +16,17 @@ export function DashboardLayout() {
       {/* <ConnectWithCalender/> */}
       <main className="">
         {connectedAccountId ? (
-          <div className="container mx-auto p-16">
-            {/* Welcome Section */}
-            <WelcomeSection
-              greeting={dashboardData.welcome.greeting}
-              subtitle={dashboardData.welcome.subtitle}
-            />
-            <CalenderList />
-            <CalendarDashboard />
-            <CalenderMeetings />
+          <div className="flex">
+            <div className="container mx-auto p-16">
+              {/* Welcome Section */}
+              <WelcomeSection
+                greeting={dashboardData.welcome.greeting}
+                subtitle={dashboardData.welcome.subtitle}
+              />
+              <CalenderList />
+              <CalendarDashboard />
+              <CalenderMeetings />
+            </div>
           </div>
         ) : (
           <ConnectWithCalender />

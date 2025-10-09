@@ -51,7 +51,7 @@ export function ChatInput({ onSendMessage, disabled, placeholder = "Ask anything
   }, [message]);
 
   return (
-    <form onSubmit={handleSubmit} className="border-t w-full border-border/50 p-4 bg-background/10 backdrop-blur-sm">
+    <form onSubmit={handleSubmit} className="border-t h-20 w-full border-border/50 p-4 bg-background/10 backdrop-blur-sm">
       <div className="flex gap-3 items-end max-w-4xl mx-auto">
         <div className="flex-1 relative">
           <textarea
