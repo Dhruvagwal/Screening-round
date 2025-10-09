@@ -29,6 +29,8 @@
     "googleapis": "^161.0.0",
     "langchain": "^0.3.35",
     "lucide-react": "^0.545.0",
+    "marked": "^16.4.0",
+    "market": "^1.0.0",
     "next": "15.5.4",
     "openai": "^6.2.0",
     "react": "19.1.0",

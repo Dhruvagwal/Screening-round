@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { useCalenderLists } from "../hooks/useCalenderLists";
 import { useCalendarDetails } from "../hooks/useCalendarDetails";
-import { useAuth } from "@/lib/auth/AuthContext";
 import { UpcomingMeetings, PastMeetings, Meeting } from "./meetings";
 import { AlertCircle } from "lucide-react";
 import {
