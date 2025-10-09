@@ -5,24 +5,23 @@ import { Sparkles } from "lucide-react";
 import ChatContainer from "./ChatContainer";
 import { useGetCalendarContext } from "../../hooks/useCalendarContext";
 
-
 function ZenMod() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { getChat } = useGetCalendarContext();
+  const { getChat, messages, setMessages } = useGetCalendarContext();
 
-  const handleSendMessage = async (message: string): Promise<string> => {
-    setIsLoading(true);
+  const handleSendMessage = async (message: string) => {
     try {
       const data = await getChat(message); // uses default if blank
-      if (data?.success && data?.data) return data.data;
-      return "I encountered an issue processing your request. Please try again.";
+      setIsLoading(true);
+      return data.message.content
     } catch (error) {
       console.error("ZenMod Chat error:", error);
-      return "I’m having trouble accessing your calendar data right now. Please ensure your calendar is connected and try again.";
     } finally {
       setIsLoading(false);
     }
+    return "I guess something went wrong.";
+    
   };
 
   return (
@@ -40,6 +39,8 @@ function ZenMod() {
 
       <DialogContent className="min-w-7xl p-0 gap-0 overflow-hidden">
         <ChatContainer
+          messages={messages}
+          setMessages={setMessages}
           onClose={() => setIsOpen(false)}
           onSendMessage={handleSendMessage}
           isLoading={isLoading}

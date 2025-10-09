@@ -10,6 +10,8 @@ interface ChatContainerProps {
   onSendMessage: (message: string) => Promise<string>;
   isLoading?: boolean;
   className?: string;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 export function ChatContainer({
@@ -17,8 +19,9 @@ export function ChatContainer({
   onSendMessage,
   isLoading,
   className,
+  messages = [],
+  setMessages,
 }: ChatContainerProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,28 +47,7 @@ export function ChatContainer({
     setIsTyping(true);
 
     try {
-      // Get AI response
-      const response = await onSendMessage(content);
-
-      // Add AI response
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        role: "assistant",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      // Add error message
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          "Sorry, I encountered an error while processing your request. Please try again.",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      await onSendMessage(content);
     } finally {
       setIsTyping(false);
     }
@@ -78,7 +60,7 @@ export function ChatContainer({
     >
       {/* Header */}
       <ChatHeader onClose={onClose} />
-      <ScrollArea className="h-[70vh] w-full">
+      <ScrollArea className="h-[75vh] w-full">
         {/* Messages Area */}
         <div>
           {messages.length === 0 ? (
